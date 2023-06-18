@@ -74,6 +74,8 @@ for param in pdq:
 
 print('The smallest AIC is {} for model SARIMAX{}x{}'.format(min(AIC), SARIMAX_model[AIC.index(min(AIC))][0],SARIMAX_model[AIC.index(min(AIC))][1]))
 
+
+
 # Let's fit this model
 mod = sm.tsa.statespace.SARIMAX(train_data,
                                 order=SARIMAX_model[AIC.index(min(AIC))][0],
@@ -86,3 +88,50 @@ results = mod.fit()
 
 results.plot_diagnostics(figsize=(20, 14))
 plt.show()
+
+
+# Prediction with 1-step ahead forecastin of the last year
+# 1-step ahead forecasting implies that each forecasted point 
+# is used to predict the following one
+
+pred0 = results.get_prediction(start='1958-01-01', dynamic=False)
+pred0_ci = pred0.conf_int()
+
+
+# Dynamic forecasting of the last year
+
+pred1 = results.get_prediction(start='1958-01-01', dynamic=True)
+pred1_ci = pred1.conf_int()
+
+
+# True forecasting out of sample data. In this case the model
+# is asked to predict data it has not seen before
+
+pred2 = results.get_forecast('1962-12-01')
+pred2_ci = pred2.conf_int()
+print(pred2.predicted_mean['1960-01-01' : '1960-12-01'])
+
+
+
+# Plot predictions
+
+ax = data.plot(figsize=(20, 16))
+pred0.predicted_mean.plot(ax=ax, label='1-stepahead Forecast (get_predictions, dynamic=False)')
+pred1.predicted_mean.plot(ax=ax, label='Dynamic Forecast (get_predictions, dynamic=True)')
+pred2.predicted_mean.plot(ax=ax, label='Dynamic Forecast (get_forecast)')
+ax.fill_between(pred2_ci.index, pred2_ci.iloc[:, 0], pred2_ci.iloc[:, 1], color='k', alpha=.1)
+plt.ylabel("Monthly airline passengers (x1000)")
+plt.xlabel("Date")
+plt.legend()
+plt.show()
+
+
+prediction = pred2.predicted_mean['1960-01-01': '1960-12-01'].values
+
+# Flatten nested list
+truth = list(itertools.chain.from_iterable(test_data.values))
+
+# Mean Absolute Percentage Error
+MAPE = np.mean(np.abs((truth - prediction) / truth)) * 100
+
+print("The Mean Absolute Percentage Error for the forecast of year 1960 is {:.2f}%".format(MAPE))
