@@ -16,7 +16,7 @@ plt.style.use('ggplot')
 data = pd.read_csv("international-airline-passengers.csv", engine="python", skipfooter=3)
 
 # Pre-processing 
-data['Month'] = pd.to_datetime(data['Month'], format='%Y-%m-%d')
+data['Month'] = pd.to_datetime(data['Month'], format='%Y-%m')
 data.set_index(['Month'], inplace=True)
 
 # Plot the data
